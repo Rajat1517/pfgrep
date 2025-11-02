@@ -1,0 +1,15 @@
+# Build output
+pfgrep
+*.o
+
+# Editor/OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Temporary files
+*.log
+*.tmp
+
+# Test directory (optional, if you don’t want sample data in repo)
+# test_dir/
