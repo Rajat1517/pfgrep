@@ -1,15 +1,18 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra
-LDFLAGS = -lpthread
-
+CXXFLAGS = -std=c++17 -Wall -pthread -Isrc/include
 SRC_DIR = src
-SRC_FILES = $(SRC_DIR)/main.cpp $(SRC_DIR)/FileScanner.cpp $(SRC_DIR)/FileSearcher.cpp
+OBJ_DIR = obj
 TARGET = pfgrep
 
-all: $(TARGET)
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-$(TARGET): $(SRC_FILES)
-	$(CXX) $(CXXFLAGS) $(SRC_FILES) -o $(TARGET) $(LDFLAGS)
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ -pthread
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(OBJ_DIR) $(TARGET)
