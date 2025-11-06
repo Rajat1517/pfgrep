@@ -1,57 +1,42 @@
+#include "FileScanner.hpp"
 #include <dirent.h>
-#include <vector>
-#include <string>
-#include <cstring>
 #include <sys/stat.h>
+#include <cstring>
+#include <iostream>
 
+void* FileScanner::parseDirectory(void* args) {
+    auto* arguments = static_cast<ScanArgs*>(args);
 
-class FileScanner{
-
-    std::string base;
-    std::vector<std::string> allFiles;
-
-    void parseDirectory(const std::string &src){
-
-        DIR *directory= opendir(src.c_str());
-        if(directory == nullptr){
-            std::string err= "Could not open directory "+ src;
-            perror(err.c_str());
-            return;
-        }
-        struct dirent *entry;
-        while((entry= readdir(directory))!= nullptr){
-            if(strcmp(entry->d_name, ".")==0 || strcmp(entry->d_name,"..")==0)continue;
-
-            std::string fullPath= src + "/"+ entry->d_name;
-            struct stat info;
-            if(stat(fullPath.c_str(), &info)==0){
-                if(S_ISREG(info.st_mode)){
-                    allFiles.push_back(fullPath);
-                }
-                else if (S_ISDIR(info.st_mode)) {
-                    parseDirectory(fullPath);
-                }
-            }
-            else{
-                std::string err=  "stat failed for" + fullPath;
-                perror(err.c_str());
-                continue;
-            }
-        }
-
-        closedir(directory);
-
+    DIR* directory = opendir(arguments->path.c_str());
+    if (directory == nullptr) {
+        std::cerr << "Could not open directory " << arguments->path << std::endl;
+        return nullptr;
     }
 
-    public:
+    struct dirent* entry;
+    while ((entry = readdir(directory)) != nullptr) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
 
-    FileScanner(const std::string &path): base(path){}
-
-
-    std::vector<std::string> getFiles(){
-        allFiles.clear();
-        parseDirectory(base);
-        return allFiles;
+        std::string fullPath = arguments->path + "/" + entry->d_name;
+        struct stat info;
+        if (stat(fullPath.c_str(), &info) == 0) {
+            if (S_ISREG(info.st_mode)) {
+                arguments->safequeue->push(fullPath);
+            } else if (S_ISDIR(info.st_mode)) {
+                ScanArgs subArgs{ arguments->safequeue, fullPath };
+                parseDirectory(&subArgs);
+            }
+        } else {
+            std::cerr << "stat failed for " << fullPath << std::endl;
+            continue;
+        }
     }
 
-};
+    closedir(directory);
+
+    // if (pthread_self() == main_producer_thread_id)
+    //     arguments->safequeue->setDone();
+
+    return nullptr;
+}

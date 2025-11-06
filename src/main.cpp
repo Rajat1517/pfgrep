@@ -1,7 +1,12 @@
 #include <iostream>
 #include <string>
-#include "FileScanner.cpp"
-#include "FileSearcher.cpp"
+#include "FileScanner.hpp"
+#include "WorkerManager.hpp"
+#include <pthread.h>
+#include "SafeQueue.hpp"
+
+
+pthread_t main_producer_thread_id;
 
 
 int main(int argc, char** argv){
@@ -14,21 +19,22 @@ int main(int argc, char** argv){
     std::string directory= argv[1];
     std::string keyword= argv[2];
 
+    const int numOfWorkers= 10;
+
     
-    FileScanner fs(directory);
+    SafeQueue safequeue ;
 
-    auto files= fs.getFiles();
-
-    if(files.empty()){
-        std::cout<<"No file found in the directory "<<directory<<std::endl;
-        return 0;
-    }
-
-    for(auto &file:files){
-        if(FileSearcher::containsKeyword(file,keyword)){
-            std::cout<<file<<" contains "<<keyword<<std::endl;
-        }
-    }
+    main_producer_thread_id= pthread_self();
+        
+    ScanArgs args{&safequeue, directory};
+    pthread_t fileScanner;
+    pthread_create(&fileScanner, nullptr, FileScanner::parseDirectory, &args);
+    WorkerManager manager(&safequeue, keyword, numOfWorkers);
+    manager.spawnThreads();
+    
+    pthread_join(fileScanner, nullptr);
+    safequeue.setDone();
+    manager.joinThreads();
 
     return 0;
 }
