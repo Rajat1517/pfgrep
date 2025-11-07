@@ -11,5 +11,7 @@ pfgrep
 *.log
 *.tmp
 
+tests
+
 # Test directory (optional, if you don’t want sample data in repo)
 # test_dir/

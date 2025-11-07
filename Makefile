@@ -1,34 +1,18 @@
-# Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Iinclude
-
-# Directories
+CXXFLAGS = -std=c++17 -Wall -pthread -Isrc/include
 SRC_DIR = src
 OBJ_DIR = obj
-BIN_DIR = bin
+TARGET = pfgrep
 
-# Files
-TARGET = $(BIN_DIR)/pfgrep
-SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-# Default target
-all: $(TARGET)
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ -pthread
 
-# Link object files into binary
-$(TARGET): $(OBJECTS)
-	@mkdir -p $(BIN_DIR)
-	$(CXX) $(OBJECTS) -o $(TARGET)
-
-# Compile each .cpp into .o
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean build artifacts
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
-
-# Run the program
-run: all
-	$(TARGET)
+	rm -rf $(OBJ_DIR) $(TARGET)
